@@ -1,0 +1,54 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// Menambahkan konstrain relasi antara model
+model User {
+  username        String    @id
+  email           String
+  password_hash   String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime?  @updatedAt
+
+  events          Event[]
+}
+
+model Event {
+  event_id        Int       @id @default(autoincrement())
+  user            User      @relation(fields: [username], references: [username])
+  username        String
+  name            String
+  description     String
+  date            DateTime
+  location        String
+  capacity        Int
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime?  @updatedAt
+
+  registrations Registration[]
+}
+
+model Registration {
+  registration_id   Int       @id @default(autoincrement())
+  name              String
+  email             String
+  phone_number      String?
+  status            String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime?  @updatedAt
+  event             Event     @relation(fields: [event_id], references: [event_id])
+  event_id          Int 
+}
+
