@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
-import { Event } from "@prisma/client";
+import { Event, User } from "@prisma/client";
 import { useValidateEvents } from "../utils/useValidateEvent";
 interface CustomRequest extends Request {
   user?: any;
@@ -21,6 +21,16 @@ const createEvent: any = async (req: CustomRequest, res: Response) => {
     const errors = useValidateEvents(name, description, location, capacity);
     if (errors) {
       return res.status(404).json({ error: errors });
+    }
+
+    const user: User | null = await prisma.user.findFirst({
+      where: {
+        username: req.user.username,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ errors: "user not found" });
     }
 
     const result: Event = await prisma.event.create({
@@ -46,6 +56,47 @@ const getEventById: any = async (req: Request, res: Response) => {
       where: {
         event_id: Number(req.params?.id),
       },
+      include: {
+        registrations: true,
+      },
+    });
+
+    if (!result?.event_id) {
+      return res.status(404).json({ error: "event not found" });
+    }
+
+    return res.status(200).json({ message: "success", data: result });
+  } catch (error) {
+    return res.status(404).json({ error: error });
+  }
+};
+
+const editEvent: any = async (req: CustomRequest, res: Response) => {
+  try {
+    const event: Event | null = await prisma.event.findFirst({
+      where: { event_id: Number(req.params.id) },
+    });
+
+    if (!event?.event_id) {
+      return res.status(404).json({ error: "event not found" });
+    }
+
+    const { name, description, date, location, capacity } = req.body;
+    const errors = useValidateEvents(name, description, location, capacity);
+    if (errors) {
+      return res.status(404).json({ error: errors });
+    }
+
+    const result = await prisma.event.update({
+      where: {
+        event_id: Number(req.params.id),
+      },
+      data: {
+        name,
+        description,
+        location,
+        capacity,
+      },
     });
 
     return res.status(200).json({ message: "success", data: result });
@@ -54,4 +105,26 @@ const getEventById: any = async (req: Request, res: Response) => {
   }
 };
 
-export { getEvents, createEvent, getEventById };
+const deleteEvent: any = async (req: CustomRequest, res: Response) => {
+  try {
+    const event: Event | null = await prisma.event.findFirst({
+      where: { event_id: Number(req.params.id) },
+    });
+
+    if (!event?.event_id) {
+      return res.status(404).json({ error: "event not found" });
+    }
+
+    const result = await prisma.event.delete({
+      where: {
+        event_id: Number(req.params.id),
+      },
+    });
+
+    return res.status(200).json({ message: "success deleted", data: result });
+  } catch (error) {
+    return res.status(404).json({ error: error });
+  }
+};
+
+export { getEvents, createEvent, getEventById, editEvent, deleteEvent };

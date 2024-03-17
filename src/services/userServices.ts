@@ -10,8 +10,12 @@ interface CustomRequest extends Request {
 
 const getUsers: any = async (req: CustomRequest, res: Response) => {
   try {
-    const users: User[] = await prisma.user.findMany();
-    return res.status(200).json({ Count: users.length, data: req.user });
+    const users: User[] = await prisma.user.findMany({
+      include: {
+        events: true,
+      },
+    });
+    return res.status(200).json({ Count: users.length, data: users });
   } catch (error) {
     return res.status(404).json({ error: error });
   }
