@@ -1,8 +1,15 @@
 import express from "express";
-import { getEvents } from "../services/eventServices";
+import {
+  createEvent,
+  getEventById,
+  getEvents,
+} from "../services/eventServices";
+import verifyToken from "../middleware/authMiddleware";
 
 const router = express.Router();
 
-router.get("/events", getEvents);
+router.get("/events", verifyToken, getEvents);
+router.get("/events/:id", getEventById);
+router.post("/events", verifyToken, createEvent);
 
 export default router;

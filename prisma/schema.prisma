@@ -27,11 +27,11 @@ model User {
 
 model Event {
   event_id        Int       @id @default(autoincrement())
-  user            User      @relation(fields: [username], references: [username])
-  username        String
+  user            User?      @relation(fields: [username], references: [username])
+  username        String?
   name            String
   description     String
-  date            DateTime
+  date            DateTime?
   location        String
   capacity        Int
   createdAt       DateTime  @default(now())

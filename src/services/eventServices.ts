@@ -1,6 +1,11 @@
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
-import { Event, User } from "@prisma/client";
+import { Event } from "@prisma/client";
+import { useValidateEvents } from "../utils/useValidateEvent";
+interface CustomRequest extends Request {
+  user?: any;
+}
+
 const getEvents: any = async (req: Request, res: Response) => {
   try {
     const events: any[] = await prisma.event.findMany();
@@ -10,20 +15,43 @@ const getEvents: any = async (req: Request, res: Response) => {
   }
 };
 
-const createEvents: any = async (req: Request, res: Response) => {
+const createEvent: any = async (req: CustomRequest, res: Response) => {
   try {
-    const { name, description, date, location, capacity, username } = req.body;
-    prisma.event.create({
+    const { name, description, date, location, capacity } = req.body;
+    const errors = useValidateEvents(name, description, location, capacity);
+    if (errors) {
+      return res.status(404).json({ error: errors });
+    }
+
+    const result: Event = await prisma.event.create({
       data: {
         name,
-        username,
         description,
-        date,
         location,
         capacity,
+        user: undefined,
+        username: req.user.username,
+        date: new Date("2000-03-24"),
       },
     });
-  } catch (error) {}
+    return res.status(201).json({ message: "success create ", data: result });
+  } catch (error) {
+    res.status(404).json({ error: error });
+  }
 };
 
-export { getEvents };
+const getEventById: any = async (req: Request, res: Response) => {
+  try {
+    const result = await prisma.event.findFirst({
+      where: {
+        event_id: Number(req.params?.id),
+      },
+    });
+
+    return res.status(200).json({ message: "success", data: result });
+  } catch (error) {
+    return res.status(404).json({ error: error });
+  }
+};
+
+export { getEvents, createEvent, getEventById };
